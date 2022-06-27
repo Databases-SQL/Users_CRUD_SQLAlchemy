@@ -6,6 +6,7 @@ from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from datetime import datetime
 import marshmallow as ma
+from sqlalchemy import create_engine
 from sqlalchemy import text
 
 app = Flask(__name__)
@@ -13,7 +14,7 @@ app = Flask(__name__)
 database_host = "127.0.0.1:5432"
 database_name = "crm"
 
-engine = create_engine = f'postgresql://{database_host}/{database_name}'
+engine = create_engine(f'postgresql://{database_host}/{database_name}')
 
 
 
