@@ -6,21 +6,20 @@ from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from datetime import datetime
 import marshmallow as ma
-import psycopg2
+from sqlalchemy import text
 
 app = Flask(__name__)
 
 database_host = "127.0.0.1:5432"
 database_name = "crm"
-app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{database_host}/{database_name}'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+engine = create_engine = f'postgresql://{database_host}/{database_name}'
+
 
 
 db = SQLAlchemy(app)
 ma  = Marshmallow(app)
 
-conn = psycopg2.connect("dbname='crm' user='silvanakoharian' host='localhost'")
-cursor = conn.cursor()
 
 
 
@@ -182,15 +181,14 @@ def get_all_users():
 
     list_of_users = []
 
-    cursor.execute('''SELECT 
+    with engine.connect() as connection:
+        result = connection.execute(text('''SELECT 
                           user_id, first_name, last_name, email, password, city, state, active
                           FROM Users  
-                      ''')
-
-    results = cursor.fetchall()
+                      '''))
 
 
-    for user in results:
+    for user in result:
       new_record = {
       'user_id' : user[0],
       'first_name' : user[1],
@@ -214,8 +212,9 @@ def get_all_users():
 # get user by id
 @app.route('/user/<user_id>', methods=['GET'])
 def get_user_by_id(user_id):
-  cursor.execute('SELECT user_id, first_name, last_name, email, password, city, state, active FROM Users WHERE user_id = %s', (user_id,))
-  result = cursor.fetchone()
+  with engine.connect() as connection:
+        result = connection.execute(text('SELECT user_id, first_name, last_name, email, password, city, state, active FROM Users WHERE user_id = %s', (user_id,)))
+
 
   if result:
     result_dictionary = {
@@ -238,12 +237,14 @@ def get_user_by_id(user_id):
 # # Delete an user
 @app.route('/user/delete/<user_id>', methods=['DELETE'])
 def user_delete(user_id):
-  cursor.execute('SELECT user_id,first_name, last_name, email, password, city, state, active FROM Users WHERE user_id = %s', (user_id,))
-  result = cursor.fetchone()
+  with engine.connect() as connection:
+        result = connection.execute(text('SELECT user_id,first_name, last_name, email, password, city, state, active FROM Users WHERE user_id = %s', (user_id,)))
+
   if result:
-     cursor.execute('DELETE FROM Users WHERE user_id = %s',(user_id,))
-     conn.commit()
-     return jsonify('User Deleted'), 200
+    with engine.connect() as connection:
+        result = connection.execute(text('DELETE FROM Users WHERE user_id = %s',(user_id,)))
+    connection.commit()
+    return jsonify('User Deleted'), 200
   return jsonify('User not found'), 404
   
 
@@ -252,7 +253,8 @@ def user_delete(user_id):
 @app.route('/user/search/<search_term>', methods=['GET'])
 def user_search(search_term):
   search_term = search_term.lower()
-  cursor.execute('''SELECT first_name, last_name, city, state, email 
+  with engine.connect() as connection:
+    result = connection.execute(text('''SELECT first_name, last_name, city, state, email 
                      FROM Users 
                      WHERE LOWER(first_name) LIKE %s
                      OR LOWER(last_name) LIKE %s
@@ -261,13 +263,13 @@ def user_search(search_term):
                      OR LOWER(email) LIKE %s
                      ''',
                      (f'%{search_term}%',f'%{search_term}%',f'%{search_term}%',f'%{search_term}%',f'%{search_term}%')
-                     )
-  results = cursor.fetchall()
+                     ))
+  # results = cursor.fetchall()
 
-  if results:
+  if result:
     list_of_search_results = []
 
-    for result in results:
+    for result in result:
           list_of_search_results.append( {
          'first_name' : result[0],
          'last_name' : result[1],
