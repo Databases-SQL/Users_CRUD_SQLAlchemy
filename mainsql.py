@@ -118,6 +118,7 @@ def activate_user(user_id):
       return ('User not found'), 404
    user_record.active = True
    db.session.commit()
+   return('User activated'), 200
 
 
 
@@ -131,6 +132,7 @@ def deactivate_user(user_id):
       return ('User not found'), 404
    user_record.active = False
    db.session.commit()
+   return('User deactivated'), 200
 
 
 

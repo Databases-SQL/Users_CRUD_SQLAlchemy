@@ -27,7 +27,7 @@ ma  = Marshmallow(app)
 
 class AppUsers(db.Model):
    __tablename__= "users"
-   user_id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
+   user_id = db.Column('user_id', db.Text(length=36), default=lambda: str(uuid.uuid4()), primary_key=True)
    first_name = db.Column(db.String(), nullable = False)
    last_name = db.Column(db.String(), nullable = False)
    email = db.Column(db.String(), nullable = False, unique = True)
